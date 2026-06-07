@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <color name="bg_main">#121212</color>
+    <color name="bg_surface">#1E1E1E</color>
+    <color name="bg_surface_light">#2A2A2A</color>
+
+    <color name="text_primary">#F5F5F5</color>
+    <color name="text_secondary">#A0A0A0</color>
+
+    <color name="accent_green">#97CE4C</color>
+    <color name="accent_blue">#00B5CC</color>
+
+    <color name="black_transparent">#66000000</color>
+
+</resources>
