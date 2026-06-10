@@ -22,12 +22,14 @@ object DatabaseModule {
             context,
             AppDatabase::class.java,
             "rick_and_morty_database"
-        ).build()
+        )
+            .fallbackToDestructiveMigration() // İŞTE HAYAT KURTARAN KOD BURASI
+            .build()
     }
 
     @Provides
     @Singleton
-    fun provideCharacterDao(database: AppDatabase) : CharacterDao {
+    fun provideCharacterDao(database: AppDatabase): CharacterDao {
         return database.characterDao()
     }
 }
