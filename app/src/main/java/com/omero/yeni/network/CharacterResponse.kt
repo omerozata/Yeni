@@ -1,6 +1,7 @@
 package com.omero.yeni.network
 
 import com.google.gson.annotations.SerializedName
+import com.omero.yeni.room.CharacterEntity
 
 // API'den gelen en dıştaki JSON yapısını karşılar
 // 1. En Dış Katman: API'nin ana cevabı
@@ -39,4 +40,21 @@ data class LocationReferenceDto(
     @SerializedName("name") val name: String,
     @SerializedName("url") val url: String
 )
+
+fun CharacterDto.toEntity(): CharacterEntity {
+    return CharacterEntity(
+        id = this.id,
+        name = this.name,
+        status = this.status,
+        species = this.species,
+        type = this.type,
+        gender = this.gender,
+        origin = this.origin, // İç içe obje doğrudan geçiyor, Room TypeConverter ile halledecek
+        location = this.location, // İç içe obje doğrudan geçiyor, Room TypeConverter ile halledecek
+        imageUrl = this.imageUrl,
+        episode = this.episode, // İç içe obje doğrudan geçiyor, Room TypeConverter ile halledecek
+        url = this.url,
+        created = this.created,
+    )
+}
 
