@@ -17,28 +17,45 @@ class HomeViewModel @Inject constructor(
     private val repository: CharacterRepository
 ) : ViewModel() {
 
-    private val _charactersList = MutableStateFlow<List<CharacterEntity>>(emptyList())
-    val charactersList: StateFlow<List<CharacterEntity>> = _charactersList.asStateFlow()
+    // Room'dan gelen canlı akış borusunu doğrudan UI'ın dinlemesi için dışarı açıyoruz
+    val charactersList = repository.getAllCharacters()
+
+    //Sayfa Hafızaları
+    private val _currentPage = MutableStateFlow(1)
+    val currentPage: StateFlow<Int> = _currentPage.asStateFlow()
+
+    private val _maxPage = MutableStateFlow(1)
+    val maxPage: StateFlow<Int> = _maxPage.asStateFlow()
 
     init {
-        getCharactersFromDatabase()
-        fetchCharactersFromApi()
+        // Uygulama açılır açılmaz sadece 1. sayfayı yükle
+        loadPage(1)
     }
 
-
-    // 1. Sürekli olarak Room veritabanını dinle ve liste güncellendikçe ekrana fırlat
-    private fun getCharactersFromDatabase() {
+    // Yükleme Motoru
+    private fun loadPage(page: Int) {
         viewModelScope.launch {
-            repository.getAllCharacters().collectLatest {
-                _charactersList.value = it
-            }
+            // Hangi sayfayı yüklediğimizi hafızaya al
+            _currentPage.value = page
+
+            // Repodan sayfayı çek ve dönen toplam sayfa sayısını (maxPage) hafızaya al
+            val fetchedMax = repository.fetchAndSaveCharacters(page)
+            _maxPage.value = fetchedMax
         }
     }
 
-    // 2. Arka planda internetten güncel veriyi çek ve veritabanına kaydet
-    private fun fetchCharactersFromApi() {
-        viewModelScope.launch {
-            repository.fetchAndSaveCharacters()
+    // ok Tuşları İçin Tetikleyiciler
+
+    fun nextPage() {
+        if (_currentPage.value < _maxPage.value) {
+            loadPage(_currentPage.value + 1)
         }
     }
+
+    fun previousPage() {
+        if (_currentPage.value > 1) {
+            loadPage(_currentPage.value - 1)
+        }
+    }
+
 }

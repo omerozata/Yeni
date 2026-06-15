@@ -8,12 +8,20 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface CharacterDao {
+
+
     @Insert(onConflict = OnConflictStrategy.REPLACE) // Aynı karakter gelirse üzerine yaz
     suspend fun insertCharacters(characters: List<CharacterEntity>)
+
 
     @Query("SELECT * FROM characters_table")
     fun getAllCharacters(): Flow<List<CharacterEntity>>
 
     @Query("SELECT * FROM characters_table WHERE id = :id")
     fun getCharacterById(id: Int) : Flow<CharacterEntity>
+
+    @Query("DELETE FROM characters_table")
+    suspend fun clearAllCharacters()
+
+
 }

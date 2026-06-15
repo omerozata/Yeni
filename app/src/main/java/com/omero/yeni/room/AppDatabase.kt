@@ -2,8 +2,11 @@ package com.omero.yeni.room
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 
-@Database(entities = [CharacterEntity::class], version = 1, exportSchema = false)
+// DİKKAT: version = 2 yaptık!
+@Database(entities = [CharacterEntity::class], version = 2, exportSchema = false)
+@TypeConverters(Converters::class) // Çevirmenleri Room'a tanıttık
 abstract class AppDatabase : RoomDatabase(){
     abstract fun characterDao(): CharacterDao
 }

@@ -1,6 +1,7 @@
 package com.omero.yeni.repo
 
 import com.omero.yeni.network.RickAndMortyApi
+import com.omero.yeni.network.toEntity
 import com.omero.yeni.room.CharacterDao
 import com.omero.yeni.room.CharacterEntity
 import kotlinx.coroutines.flow.Flow
@@ -21,30 +22,43 @@ class CharacterRepository @Inject constructor(
         return dao.getCharacterById(id)
     }
 
+    //İnternetten yeni sayfayı çekip Room'u güncelleyen ana fonksiyonumuz
+    suspend fun fetchAndSaveCharacters(page: Int): Int {
+        return try {
 
-    // 2. İnternetten veriyi çekip Room'a kaydedecek olan arka plan işlemi
+            // API'ye sayfa numarasını gönderiyoruz (Diğer filtreleri şimdilik null bıraktık)
+            val response = api.getCharacters(page = page)
 
-    suspend fun fetchAndSaveCharacters() {
-        try {
-            val response = api.getCharacters()
+            if (response.isSuccessful && response.body() != null) {
+                val body = response.body()!!
 
-            // Adım B: DTO'yu (İnternet Modeli) Entity'ye (Veritabanı Modeli) dönüştür
+                // Gelen zengin DTO listesini, yazdığımız .toEntity() köprüsüyle Room modeline çeviriyoruz
 
-            val entities = response.results.map { dto ->
-                CharacterEntity(
-                    id = dto.id,
-                    name = dto.name,
-                    species = dto.species,
-                    imageUrl = dto.imageUrl
-                )
+                val characterEntities = body.results.map { it.toEntity() }
+
+                // API'den gelen toplam sayfa sayısını yakalıyoruz (İleride sağ oku kısıtlamak için)
+
+                val totalPages = body.info.pages
+
+                // Önce eski sayfanın 20 karakterini temizliyoruz
+
+                dao.clearAllCharacters()
+
+                // Sonra yepyeni ve dopdolu 20 karakteri Room'a yazıyoruz
+
+                dao.insertCharacters(characterEntities)
+
+                // Her şey yolunda gittiyse toplam sayfa sayısını döndür
+                totalPages
+            } else {
+                // API'den başarısız bir kod döndüyse varsayılan olarak 1 dönüyoruz
+                1
             }
-            // Adım C: Dönüştürülmüş verileri Room veritabanına kaydet
-            dao.insertCharacters(entities)
-
         } catch (e: Exception) {
-            // Eğer internet yoksa veya sunucu çökmüşse kod buraya düşer.
-            // Veritabanında eski veriler olduğu için uygulama çökmez, offline çalışmaya devam eder.
             e.printStackTrace()
+            1
         }
     }
+
+
 }
