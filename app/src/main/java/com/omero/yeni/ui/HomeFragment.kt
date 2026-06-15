@@ -34,6 +34,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         // Artık tasarımdaki elemanlara binding.butonAdi şeklinde ulaşabilirsin!
 
         setupRecyclerView()
+        setupButtons()
         observeViewModel()
 
     }
@@ -41,7 +42,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private fun setupRecyclerView() {
         characterAdapter = CharacterAdapter { clickedCharacterId ->
             // Navigasyon Grafiğindeki oklu yolu ve göndereceğimiz ID'yi seçiyoruz
-            val action = HomeFragmentDirections.actionHomeFragmentToDetailsFragment(clickedCharacterId)
+            val action =
+                HomeFragmentDirections.actionHomeFragmentToDetailsFragment(clickedCharacterId)
             // Portalı açarak diğer sayfaya geç!
             findNavController().navigate(action)
 
@@ -50,17 +52,68 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
     }
 
+    private fun setupButtons() {
+        binding.btnNext.setOnClickListener {
+            viewModel.nextPage()
+        }
+        binding.btnPrev.setOnClickListener {
+            viewModel.previousPage()
+        }
+
+        // Not: btnGo (Git) butonu şimdilik boş duruyor, ona dokunmuyoruz.
+    }
+
     private fun observeViewModel() {
         // Coroutine başlatıyoruz çünkü Flow dinlemek (collect) arka plan işidir
         viewLifecycleOwner.lifecycleScope.launch {
             // repeatOnLifecycle(STARTED): Kullanıcı uygulamayı arka plana attığında
             // internet/veri dinlemeyi durdurur, geri açtığında devam ettirir. Şarjı ve RAM'i korur
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.charactersList.collectLatest {
-                    // ListAdapter'ın kendi fonksiyonu. Ajan (DiffUtil) burada devreye girer,
-                    // eski listeyle bu gelen yeni listeyi kıyaslar ve ekranı pürüzsüzce günceller.
-                    characterAdapter.submitList(it)
+
+
+                // Liste Güncellemesi
+                launch {
+                    viewModel.charactersList.collectLatest { list ->
+                        // ListAdapter'ın kendi fonksiyonu. Ajan (DiffUtil) burada devreye girer,
+                        // eski listeyle bu gelen yeni listeyi kıyaslar ve ekranı pürüzsüzce günceller.
+                        characterAdapter.submitList(list)
+                        if (list.isNotEmpty()) {
+                            binding.rvCharacters.scrollToPosition(0) // Yeni sayfada listeyi en başa sar
+                        }
+                    }
                 }
+
+                // Geçerli Sayfa (currentPage) Değiştiğinde Arayüzü Güncelle
+
+                launch {
+                    viewModel.currentPage.collectLatest { current ->
+                        val max = viewModel.maxPage.value
+
+                        // Ortadaki yazıyı güncelle
+                        binding.tvPageInfo.text = "Sayfa $current / $max"
+
+                        // Sol oku kontrol et (1. sayfadaysa kapat)
+                        binding.btnPrev.isEnabled = current > 1
+                        binding.btnPrev.alpha = if (current > 1) 1.0f else 0.3f
+
+                        // Sağ oku kontrol et (Son sayfadaysa kapat)
+                        binding.btnNext.isEnabled = current < max
+                        binding.btnNext.alpha = if (current < max) 1.0f else 0.3f
+                    }
+                }
+
+                // Maksimum Sayfa (maxPage) İlk Kez API'den Geldiğinde Arayüzü Güncelle
+                launch {
+                    viewModel.maxPage.collectLatest {max ->
+                        val current = viewModel.currentPage.value
+
+                        binding.tvPageInfo.text = "Sayfa $current / $max"
+
+                        binding.btnNext.isEnabled = current < max
+                        binding.btnNext.alpha = if (current < max) 1.0f else 0.3f
+                    }
+                }
+
             }
         }
     }
