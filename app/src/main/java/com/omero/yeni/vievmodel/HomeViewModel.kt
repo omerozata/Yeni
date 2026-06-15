@@ -17,28 +17,23 @@ class HomeViewModel @Inject constructor(
     private val repository: CharacterRepository
 ) : ViewModel() {
 
-    private val _charactersList = MutableStateFlow<List<CharacterEntity>>(emptyList())
-    val charactersList: StateFlow<List<CharacterEntity>> = _charactersList.asStateFlow()
+    // Room'dan gelen canlı akış borusunu doğrudan UI'ın dinlemesi için dışarı açıyoruz
+    val charactersList = repository.getAllCharacters()
+
 
     init {
-        getCharactersFromDatabase()
-        fetchCharactersFromApi()
+        // Uygulama açılır açılmaz sadece 1. sayfayı yükle
+        fetchFirstPage()
     }
 
-
-    // 1. Sürekli olarak Room veritabanını dinle ve liste güncellendikçe ekrana fırlat
-    private fun getCharactersFromDatabase() {
+    private fun fetchFirstPage() {
         viewModelScope.launch {
-            repository.getAllCharacters().collectLatest {
-                _charactersList.value = it
-            }
+
+            // Repository'deki yeni fonksiyonumuza sabit olarak 1 sayısını gönderiyoruz
+            repository.fetchAndSaveCharacters(1)
         }
     }
 
-    // 2. Arka planda internetten güncel veriyi çek ve veritabanına kaydet
-    private fun fetchCharactersFromApi() {
-        viewModelScope.launch {
-            repository.fetchAndSaveCharacters()
-        }
-    }
+
+
 }
