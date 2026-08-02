@@ -12,6 +12,7 @@ import com.omero.yeni.vievmodel.SplashScreenViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration.Companion.milliseconds
 
 // :)
 
@@ -25,7 +26,7 @@ private val viewModel: SplashScreenViewModel by viewModels()
 
         viewLifecycleOwner.lifecycleScope.launch {
             // Splash ekranında veriyi hazırlamak için en fazla 3 saniye veriyoruz
-            withTimeoutOrNull(3000) {
+            withTimeoutOrNull(3000.milliseconds) {
                 viewModel.prepareAppConfiguration()
             }
             // Süre dolduğunda veya veri geldiğinde Home ekranına zıpla
